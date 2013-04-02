@@ -1,0 +1,29 @@
+
+
+Its all about template generation now. 
+
+There are a couple of approaches.
+
+It seems reasonable to assume that the right method is to:
+
+1. Create a new ORM controller that handles the basic CRUD in a RESTful manner...
+2. The next question is how to handle the complexity of the per-object layouts... if possible, you would want this to be very very DRY. Possible options include:
+
+	* Generating a ton of smarty interfaces... and then making the controller smart enough to detect custom smarty controllers and use those instead of compiled views...
+        * making the generated ORM files all inherit from a new "Base" model class that knows how to make an html form from itself...
+        * making the ORM controller smart enough to know how to make a form from a controller
+
+
+The second two sound more DRY and better use of abstractions.
+
+The the question comes about whether to auto-generate controllers. 
+If we do autogenerate controllers then we should put them in a orm subdirectory...
+
+or we could do smart routing... if there -is- a controller for a specific object then we use that... 
+otherwise we call the main ORM controller and just pass in the object type from the route...
+
+Or we could just do dumb routing to the ORM controller... and create secondary, non ORM controllers for fancy dashboard links...
+
+When you are not so exausted that you cannot see straight. Re-read this and then make a decision...
+
+-FT 

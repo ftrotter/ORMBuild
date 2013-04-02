@@ -1,0 +1,4 @@
+user: your_user
+password: 'password_goes_here'
+database: which_database
+host: localhost
