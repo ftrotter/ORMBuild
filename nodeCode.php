@@ -1,6 +1,13 @@
 <?php
 	//has the template for generating node files
 
+	//TODO note that sequalize is smart enough to switch between updatedAt and updated_at
+	//while laravel is not...
+	//which means that you need to use the underscored: true; variable on our sequalize 
+	//objects for maximum parsimony and happiness
+
+
+
 	class nodeCode{
 
 		var $index_text = "var ModelCache = {};
