@@ -79,7 +79,7 @@ FROM `INFORMATION_SCHEMA`.`COLUMNS`
 WHERE `TABLE_SCHEMA`='$database' 
     AND `TABLE_NAME`='$this_table';";
 
-		$result = mysql_query($fields_sql) or die("doh!");
+		$result = mysql_query($fields_sql) or die("doh!\n $fields_sql \n".mysql_error());
 		
 		$object_name = $object_names[$this_table];
 
