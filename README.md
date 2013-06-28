@@ -48,6 +48,13 @@ Table Syntax Rules
 * otherwise the last _name field in a table is used.
 * if the fields beigns with is_ then it is regarded as being a boolean and will be replaced with a checkbox or a radio button...
   
+if you add the following fields at the end of your table, then Laravel and Sequelize will both be very happy...
+
+    ALTER TABLE `ThingState`
+    ADD `created_by_User_id` INT(11) NOT NULL,  
+    ADD `modified_by_User_id` INT(11) NOT NULL,  
+    ADD `created_at` DATETIME NOT NULL,  
+    ADD `updated_at` DATETIME NOT NULL
 
 
 
