@@ -35,6 +35,7 @@ Table Syntax Rules
 =======
 
 * We take the 's' off of the table name to get the singlular
+* You must have AutoIncrement and PRIMARY key set on the 'id' field of each table
 * So never name your table ThingStatus because that becomes ThingStatu when we make it singular.
 * Instead use ThingStates, which works right...
 * If you want to link a field to the id of another table, then ensure that you end the field name with ThingState_id
