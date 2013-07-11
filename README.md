@@ -48,6 +48,17 @@ Table Syntax Rules
 * otherwise the last _name field in a table is used.
 * if the fields beigns with is_ then it is regarded as being a boolean and will be replaced with a checkbox or a radio button...
   
+Every table must have the following additional fields if it is to be editable via the ORM..
+
+>ALTER TABLE `tABLEnAME`
+>ADD `created_by_User_id` INT(11) NOT NULL,
+>ADD `modified_by_User_id` INT(11) NOT NULL,
+>ADD `created_at` DATETIME NOT NULL,
+>ADD `updated_at` DATETIME NOT NULL
+
+
+Note the strangeness of having "updated" and "modified" there may have been a reason that I did that.
+
 
 
 
