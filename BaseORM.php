@@ -234,8 +234,10 @@
 					$data_array[$field_name] = date('m/d/y',$this_date);	
 				}
 			}
-
-			if(strpos($field_name,'_id') && !$hidden){
+            //hidden means it is a field
+            //that we hide on the form... list update_at
+                                           
+			if(preg_match('_id$',$field_name) && !$hidden){
 				//lets loose the "ID" for the label..
 				array_pop($label_array);
 				$label = ucwords(implode(' ',$label_array));
