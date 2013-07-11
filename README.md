@@ -51,9 +51,13 @@ Table Syntax Rules
 Every table must have the following additional fields if it is to be editable via the ORM..
 
 >ALTER TABLE `tABLEnAME`
+
 >ADD `created_by_User_id` INT(11) NOT NULL,
+
 >ADD `modified_by_User_id` INT(11) NOT NULL,
+
 >ADD `created_at` DATETIME NOT NULL,
+
 >ADD `updated_at` DATETIME NOT NULL
 
 
