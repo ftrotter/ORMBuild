@@ -94,7 +94,7 @@
 			}
 
 			if(!isset($the_field)){
-				echo "Error, each object must have at least one _name field, here is what I got..<br><pre>";
+				echo "Error, each object must have at least one _name field, but $this->table does not have one.  here is what I got..<br><pre>";
 				var_export($fields);
 				echo "</pre>";
 				exit();
@@ -204,16 +204,25 @@
 			}
 
 			if(
-				strpos($field_name,'is_') !== false ||
-				strpos($field_name,'_is') !== false
+				( 	strpos($field_name,'is_') !== false ||
+					strpos($field_name,'_is') !== false
+				) &&
+				strpos($field_name,'_issue') === false
 
 				){ //this is a boolean and should have a checkbox 
 				$type = 'boolean'; 
 
 				$extra_opt = array("rightLabel"=> "$label?");
 				$label_array = explode(' ',$label);
-				$label = $label_array[1]; //loose the "Is" in the main label..
-				if(is_null($current_value)){
+				if(isset($label_array[1])){
+					$label = $label_array[1]; //loose the "Is" in the main label..
+				}else{
+
+					echo "Error: $label did not properly split for $field_name";
+					exit();
+
+				}
+				if(is_null($current_value))	{
 					$data_array[$field_name] = false;
 				}else{
 					// we need to translate between the db world of 0/1 to json true/false
@@ -238,10 +247,10 @@
 					$data_array[$field_name] = date('m/d/y',$this_date);	
 				}
 			}
-            //hidden means it is a field
-            //that we hide on the form... list update_at
-                                           
-			if(preg_match('_id$',$field_name) && !$hidden){
+
+       		  //hidden means that it is one of the ids that do not show on the form
+	          //like create_by_User_id etc
+		      if(preg_match('/_id$/',$field_name) && !$hidden){
 				//lets loose the "ID" for the label..
 				array_pop($label_array);
 				$label = ucwords(implode(' ',$label_array));
