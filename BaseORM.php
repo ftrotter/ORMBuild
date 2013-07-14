@@ -131,7 +131,7 @@
 
 		function getAlpacaJSON(){
 				
-			return json_encode($this->getAlpacaArray(),JSON_PRETTY_PRINT);
+			return json_encode($this->getAlpacaArray(),JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
 		}
 
@@ -203,7 +203,11 @@
 				$hidden = true;	
 			}
 
-			if(strpos($field_name,'is_') !== false){ //this is a boolean and should have a checkbox 
+			if(
+				strpos($field_name,'is_') !== false ||
+				strpos($field_name,'_is') !== false
+
+				){ //this is a boolean and should have a checkbox 
 				$type = 'boolean'; 
 
 				$extra_opt = array("rightLabel"=> "$label?");
@@ -224,7 +228,7 @@
 
 
 			if(strpos($field_name,'_date')){
-				$type = 'text'; 
+				$type = 'string'; 
 				$format = 'date';
 				
 				if(is_null($current_value)){
@@ -252,6 +256,10 @@
 				$field_name_array = explode('_',$field_name);
 				$throw_away_the_id = array_pop($field_name_array);
 				$object_name = array_pop($field_name_array);
+
+				if(!class_exists($object_name)){
+					die("There is no class $object_name which I got from $field_name");
+				}
 
 				$newObject = new $object_name();
 				
