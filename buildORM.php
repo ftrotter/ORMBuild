@@ -137,7 +137,7 @@ WHERE `TABLE_SCHEMA`='$database'
 	//			echo "searching for $other_table_tag in object2table to model $relationship\t";
 	
 				if(isset($object2table[strtolower($other_table_tag)])){
-					echo "found it\t";
+					echo "found $other_table_tag\t";
 					//this just doesnt look like a link!! it -is- one.
 
 

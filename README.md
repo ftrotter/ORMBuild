@@ -35,6 +35,7 @@ Table Syntax Rules
 =======
 
 * We take the 's' off of the table name to get the singlular
+* You must have AutoIncrement and PRIMARY key set on the 'id' field of each table
 * So never name your table ThingStatus because that becomes ThingStatu when we make it singular.
 * Instead use ThingStates, which works right...
 * If you want to link a field to the id of another table, then ensure that you end the field name with ThingState_id
@@ -55,6 +56,21 @@ if you add the following fields at the end of your table, then Laravel and Seque
     ADD `modified_by_User_id` INT(11) NOT NULL,  
     ADD `created_at` DATETIME NOT NULL,  
     ADD `updated_at` DATETIME NOT NULL
+Every table must have the following additional fields if it is to be editable via the ORM..
+
+>ALTER TABLE `tABLEnAME`
+
+>ADD `created_by_User_id` INT(11) NOT NULL,
+
+>ADD `modified_by_User_id` INT(11) NOT NULL,
+
+>ADD `created_at` DATETIME NOT NULL,
+
+>ADD `updated_at` DATETIME NOT NULL
+
+
+Note the strangeness of having "updated" and "modified" there may have been a reason that I did that.
+
 
 
 
