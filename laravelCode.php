@@ -16,7 +16,7 @@
 	var $ORM_base_file_name = array();
 	var $ORM_process_file_name = array();
 
-	var $overwrite = true;
+	var $overwrite = false;
 
 	var $debug = true;
 	var $c = ''; //comma character starts life as an empty string...
