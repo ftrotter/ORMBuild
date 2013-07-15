@@ -31,7 +31,9 @@
 	$allCodeGen = array( $lCode);
 
 
-
+	$not_obj_tables = array(
+		'view_',
+	);
 
 
 	$tables_sql = "SHOW TABLES";
@@ -41,7 +43,18 @@
 	while($row = mysql_fetch_array($result)){		
 		$this_table = $row[0];
 		echo "found $this_table \n";
-		$tables[] = $this_table;
+		$skip_it = false;
+		foreach($not_obj_tables as $nope){
+			if(strpos($this_table,$nope) !== false){
+				//well we cant use this one then...
+				echo "but it matched $nope, so we are going to ignore it\n";
+				$skip_it = true;
+			}
+		}
+
+		if(!$skip_it){
+			$tables[] = $this_table;
+		}
 	}
 
 	$other_tables = array(); //lets make sure we have references where we need them...
