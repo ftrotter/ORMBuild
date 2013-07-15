@@ -9,6 +9,62 @@
 		//we need to override the core ORM functions to be aware of the true/false
 		//to 1/0 translation...
 
+		public static function create(array $attributes){
+
+			$attributes = BaseORM::fix_dates($attributes);
+
+			return(parent::create($attributes));			
+
+		}
+
+		public function fill(array $attributes){
+
+			$attributes = BaseORM::fix_dates($attributes);
+		
+			return(parent::fill($attributes));
+
+		}
+
+
+		static function fix_dates($input){
+
+			if(count($input) == 0){
+				return($input);
+			}
+
+			foreach($input as $field_name => $contents){
+
+				if(BaseORM::detect_date($field_name)){	
+					$input[$field_name] = date('Y-m-d',strtotime($contents));
+				}
+			}
+
+			return($input);
+		}
+
+
+		static function detect_date($field_name){
+			return(strpos($field_name,'_date'));
+		}
+
+		static function detect_id($field_name){
+			return(preg_match('/_id$/',$field_name));
+		}
+
+		static function detect_is($field_name){
+
+			$return_me = 	((       strpos($field_name,'is_') !== false ||
+                                        	strpos($field_name,'_is') !== false
+                                	) &&
+                                	strpos($field_name,'_issue') === false
+
+                                	);
+
+			return($return_me);
+
+
+		}
+
 
 
 		static function listObjectTypes(){
@@ -203,13 +259,7 @@
 				$hidden = true;	
 			}
 
-			if(
-				( 	strpos($field_name,'is_') !== false ||
-					strpos($field_name,'_is') !== false
-				) &&
-				strpos($field_name,'_issue') === false
-
-				){ //this is a boolean and should have a checkbox 
+			if(BaseORM::detect_is($field_name)){ //this is a boolean and should have a checkbox 
 				$type = 'boolean'; 
 
 				$extra_opt = array("rightLabel"=> "$label?");
@@ -236,7 +286,7 @@
 			}
 
 
-			if(strpos($field_name,'_date')){
+			if(BaseORM::detect_date($field_name)){
 				$type = 'string'; 
 				$format = 'date';
 				
@@ -244,13 +294,13 @@
 					$data_array[$field_name] = '01/01/01';
 				}else{
 					$this_date = strtotime($current_value);
-					$data_array[$field_name] = date('m/d/y',$this_date);	
+					$data_array[$field_name] = date('m/d/Y',$this_date);	
 				}
 			}
 
        		  //hidden means that it is one of the ids that do not show on the form
 	          //like create_by_User_id etc
-		      if(preg_match('/_id$/',$field_name) && !$hidden){
+		      if(BaseORM::detect_id($field_name) && !$hidden){
 				//lets loose the "ID" for the label..
 				array_pop($label_array);
 				$label = ucwords(implode(' ',$label_array));
