@@ -58,19 +58,10 @@ if you add the following fields at the end of your table, then Laravel and Seque
     ADD `updated_at` DATETIME NOT NULL
 Every table must have the following additional fields if it is to be editable via the ORM..
 
->ALTER TABLE `tABLEnAME`
-
->ADD `created_by_User_id` INT(11) NOT NULL,
-
->ADD `modified_by_User_id` INT(11) NOT NULL,
-
->ADD `created_at` DATETIME NOT NULL,
-
->ADD `updated_at` DATETIME NOT NULL
-
 
 Note the strangeness of having "updated" and "modified" there may have been a reason that I did that.
 
-
+Because we build function names from the field names in the table, we have to have some limitations.
+You can start a field with a digit '1', or '0' but you cannot start a function that way.. so beware...
 
 
