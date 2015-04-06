@@ -2,3 +2,5 @@ user: your_user
 password: 'password_goes_here'
 database: which_database
 host: localhost
+laravel_output_directory: 'laravelModels/'
+node_output_directory: 'node/sequelize/'
