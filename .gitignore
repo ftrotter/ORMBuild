@@ -1,3 +1,6 @@
 *.yaml
 laravelModels/*.log
 laravelModels/*.php
+node/sequelize/*.log
+node/sequelize/*.js
+node/orm/*.js
