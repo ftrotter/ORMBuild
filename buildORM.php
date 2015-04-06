@@ -12,6 +12,8 @@
 		echo "use pecl to install php yaml";
 		exit();
 	}
+
+
 	$user = $config['user'];
 	$password = $config['password'];
 	$database = $config['database'];
@@ -22,13 +24,20 @@
 	require_once('laravelCode.php');
 	$lCode = new laravelCode(); 
 
-	if(isset($config['laravel_dir'])){
-		$lCode->output_dir = $config['laravel_dir'];
-	}else{
-		//we put things into the default which is hardcoded into $lCode... etc...
+	require_once('nodeCode.php');
+	$nCode = new nodeCode(); 
+
+
+	//we put things into the default which is hardcoded into $lCode... etc...
+	if(isset($config['laravel_output_dir'])){
+		$lCode->output_dir = $config['laravel_output_dir'];
 	}
 
-	$allCodeGen = array( $lCode);
+	if(isset($config['node_output_dir'])){
+		$nCode->output_dir = $config['node_output_dir'];
+	}
+
+	$allCodeGen = array( $lCode, $nCode);
 
 
 	$not_obj_tables = array(
@@ -83,6 +92,7 @@
 	$has_many = array();
 	$belongs_to = array();	
 	$table_data = array();
+	$rows_data = array();
 
 	//The second pass over the tables we are looking for valid 
 	foreach($tables as $this_table){
@@ -100,7 +110,7 @@ WHERE `TABLE_SCHEMA`='$database'
 		echo "\nWorking on table $this_table -> $object_name -> $object_label \n";
 
 		$all_cols = array();
-
+		$all_row_results = array();
 		//For the sake of sanity keep this model in mind as you read this code..
 		// Person ->
 		// 	has_many_Editor_Book()
@@ -121,7 +131,6 @@ WHERE `TABLE_SCHEMA`='$database'
 
 		while($row = mysql_fetch_array($result)){
 		//first pass for modeling...
-			
 		//second pass for creating actual code...
 			$foreign_key = false;
 		
@@ -129,6 +138,7 @@ WHERE `TABLE_SCHEMA`='$database'
 
 			$col_name = $row['COLUMN_NAME'];
 			$all_cols[] = $col_name;
+			$all_row_results[$col_name] = $row; 
 			$col_label = un_camelcase_string($col_name);
 
 			if(strpos($col_name,'_id') != 0){
@@ -175,7 +185,8 @@ WHERE `TABLE_SCHEMA`='$database'
 		}//done dealing with columns...
 
 		$table_data[$this_table] = $all_cols;
-
+		$rows_data[$this_table] = $all_row_results;
+		
 	}//moving to the next table
 	
 	foreach($allCodeGen as $thisCodeGenerator){
@@ -195,10 +206,13 @@ WHERE `TABLE_SCHEMA`='$database'
 			$this_belongs_to = array();
 		}
 
-		$lCode->generate(array(
+		$this_row_data = $rows_data[$this_table];
+
+		$thisCodeGenerator->generate(array(
 					'object_name'	=> $object_name,
 					'table_name' => $this_table,
 					'table_cols' => $table_cols,
+					'table_row_results' => $this_row_data,
 					'has_many' => $this_has_many,
 					'belongs_to' => $this_belongs_to,
 					'database' => $database,
