@@ -1,2 +1,3 @@
 *.yaml
-laravelModels
+laravelModels/*.log
+laravelModels/*.php
