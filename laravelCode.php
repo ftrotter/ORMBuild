@@ -5,7 +5,6 @@
 
 	var $dir_name = "larvavel/eloquent/";
 	var $index_file_name = "index.php";
-	var $log_dir = "./laravelModels";	
 	var $output_dir = "./laravelModels"; //this has to be here... its set from the outside!!
 
 	var $ORM_file_content = array();
@@ -48,12 +47,14 @@
 		$this->ORM_base_file_name[$object_name] = $full_base_file;
 		
 		$process_file_name = "$object_name.log";
-		$full_process_file = "$this->log_dir/$process_file_name";
+		$full_process_file = "$this->output_dir/$process_file_name";
 		$this->ORM_process_file_name[$object_name] = $full_process_file;
 
 
 		$this->each_table_start($table_data);
 
+
+		//this is just for logging the process...
 		$this->ORM_process_file_content[$object_name] = "Object $object_name has_many:\n";
 		$this->ORM_process_file_content[$object_name] .= var_export($has_many,true);
 		$this->ORM_process_file_content[$object_name] .= "Object $object_name belongs_to:\n";
