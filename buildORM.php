@@ -1,232 +1,218 @@
 <?php
-	//copyright fred.trotter@gmail.com
-	//Not Only Development, LLC 2012
-	//Licensed under the same license as Sequelize
-	//https://github.com/sdepold/sequelize/blob/master/LICENSE
+    //copyright fred.trotter@gmail.com
+    //Not Only Development, LLC 2012
+    //Licensed under the same license as Sequelize
+    //https://github.com/sdepold/sequelize/blob/master/LICENSE
 
-	$yaml_file = 'config.yaml';
+    $yaml_file = 'config.yaml';
 
-	if(function_exists('yaml_parse_file')){ //then we are using PECL..
-		$config = yaml_parse_file($yaml_file);
-	}else{
-		echo "use pecl to install php yaml";
-		exit();
-	}
+    if (function_exists('yaml_parse_file')) { //then we are using PECL..
+        $config = yaml_parse_file($yaml_file);
+    } else {
+        echo 'use pecl to install php yaml';
+        exit();
+    }
 
+    $user = $config['user'];
+    $password = $config['password'];
+    $database = $config['database'];
+    mysql_connect($config['host'], $user, $password);
+    mysql_select_db($database);
 
-	$user = $config['user'];
-	$password = $config['password'];
-	$database = $config['database'];
-	mysql_connect($config['host'],$user,$password);
-	mysql_select_db($database);
+    //Add new code generators here
+    require_once 'laravelCode.php';
+    $lCode = new laravelCode();
 
-	//Add new code generators here
-	require_once('laravelCode.php');
-	$lCode = new laravelCode(); 
+    require_once 'nodeCode.php';
+    $nCode = new nodeCode();
 
-	require_once('nodeCode.php');
-	$nCode = new nodeCode(); 
+    //we put things into the default which is hardcoded into $lCode... etc...
+    if (isset($config['laravel_output_dir'])) {
+        $lCode->output_dir = $config['laravel_output_dir'];
+    }
 
+    if (isset($config['node_output_dir'])) {
+        $nCode->output_dir = $config['node_output_dir'];
+    }
 
-	//we put things into the default which is hardcoded into $lCode... etc...
-	if(isset($config['laravel_output_dir'])){
-		$lCode->output_dir = $config['laravel_output_dir'];
-	}
+    $allCodeGen = [$lCode, $nCode];
 
-	if(isset($config['node_output_dir'])){
-		$nCode->output_dir = $config['node_output_dir'];
-	}
+    $not_obj_tables = [
+        'view_',
+    ];
 
-	$allCodeGen = array( $lCode, $nCode);
+    $tables_sql = 'SHOW TABLES';
 
+    $result = mysql_query($tables_sql) or die("arrgh... my eye!!! $tables_sql");
 
-	$not_obj_tables = array(
-		'view_',
-	);
+    while ($row = mysql_fetch_array($result)) {
+        $this_table = $row[0];
+        echo "found $this_table \n";
+        $skip_it = false;
+        foreach ($not_obj_tables as $nope) {
+            if (strpos($this_table, $nope) !== false) {
+                //well we cant use this one then...
+                echo "but it matched $nope, so we are going to ignore it\n";
+                $skip_it = true;
+            }
+        }
 
+        if (!$skip_it) {
+            $tables[] = $this_table;
+        }
+    }
 
-	$tables_sql = "SHOW TABLES";
+    $other_tables = []; //lets make sure we have references where we need them...
 
-	$result = mysql_query($tables_sql) or die("arrgh... my eye!!! $tables_sql");
+    $object_names = [];
+    $object2table = [];
 
-	while($row = mysql_fetch_array($result)){		
-		$this_table = $row[0];
-		echo "found $this_table \n";
-		$skip_it = false;
-		foreach($not_obj_tables as $nope){
-			if(strpos($this_table,$nope) !== false){
-				//well we cant use this one then...
-				echo "but it matched $nope, so we are going to ignore it\n";
-				$skip_it = true;
-			}
-		}
+    //first pass handles case
+    //BTW fuck plurals... we just take one 's' off of the end of everything if its there
+    //Ignore it if its not...
+    foreach ($tables as $this_table) {
+        if (substr($this_table, -1, 1) == 's') { //I cannot remeber why this is here???
+            $object_name = substr($this_table, 0, -1);
+        } else {
+            $object_name = $this_table;
+        }
+        $object_names[$this_table] = $object_name;
+        $object2table[strtolower($object_name)] = $this_table;
+    }
+    //We have to do this because we need to have all of the object names
+    //to do anything intelligent with modeling...
+    //now we can rely on $object_names to be full
 
-		if(!$skip_it){
-			$tables[] = $this_table;
-		}
-	}
+    $has_many = [];
+    $belongs_to = [];
+    $table_data = [];
+    $rows_data = [];
 
-	$other_tables = array(); //lets make sure we have references where we need them...
-	
-	$object_names = array();
-	$object2table = array();
-
-
-	//first pass handles case
-	//BTW fuck plurals... we just take one 's' off of the end of everything if its there
-	//Ignore it if its not...
-	foreach($tables as $this_table){
-
-		if(substr($this_table, -1, 1) == 's') { //I cannot remeber why this is here???
-  			$object_name = substr($this_table, 0, -1);
-		}else{
-			$object_name = $this_table;
-		}
-		$object_names[$this_table] = $object_name;
-		$object2table[strtolower($object_name)] = $this_table;
-	}
-	//We have to do this because we need to have all of the object names 
-	//to do anything intelligent with modeling...
-	//now we can rely on $object_names to be full
-
-	$has_many = array();
-	$belongs_to = array();	
-	$table_data = array();
-	$rows_data = array();
-
-	//The second pass over the tables we are looking for valid 
-	foreach($tables as $this_table){
-
-		$fields_sql = "SELECT * 
+    //The second pass over the tables we are looking for valid
+    foreach ($tables as $this_table) {
+        $fields_sql = "SELECT * 
 FROM `INFORMATION_SCHEMA`.`COLUMNS` 
 WHERE `TABLE_SCHEMA`='$database' 
     AND `TABLE_NAME`='$this_table';";
 
-		$result = mysql_query($fields_sql) or die("doh!\n $fields_sql \n".mysql_error());
-		
-		$object_name = $object_names[$this_table];
+        $result = mysql_query($fields_sql) or die("doh!\n $fields_sql \n".mysql_error());
 
-		$object_label = un_camelcase_string($object_name);
-		echo "\nWorking on table $this_table -> $object_name -> $object_label \n";
+        $object_name = $object_names[$this_table];
 
-		$all_cols = array();
-		$all_row_results = array();
-		//For the sake of sanity keep this model in mind as you read this code..
-		// Person ->
-		// 	has_many_Editor_Book()
-		//	has_many_Author_Book()
-		// Book -> 
-		//	belongs_to_Author_Person()
-		//	belongs_to_Editor_Person()
-		//
-		// Each entry in the book table has two ids:
-		//	 Author_Person_id
-		//	 Editor_Person_id
-		// All four of the functions in the objects should be modeled correctly by the 
-		// contents of the has_many and belongs_to array. so:
-		// $has_many['Book']['Author'] = 'Person';
-		// $has_many['Book']['Editor'] = 'Person';
-		// $belongs_to['Person']['Author'] = 'Book';
-		// $belongs_to['Person']['Editor'] = 'Book';
+        $object_label = un_camelcase_string($object_name);
+        echo "\nWorking on table $this_table -> $object_name -> $object_label \n";
 
-		while($row = mysql_fetch_array($result)){
-		//first pass for modeling...
-		//second pass for creating actual code...
-			$foreign_key = false;
-		
-			//var_export($row);
+        $all_cols = [];
+        $all_row_results = [];
+        //For the sake of sanity keep this model in mind as you read this code..
+        // Person ->
+        // 	has_many_Editor_Book()
+        //	has_many_Author_Book()
+        // Book ->
+        //	belongs_to_Author_Person()
+        //	belongs_to_Editor_Person()
+        //
+        // Each entry in the book table has two ids:
+        //	 Author_Person_id
+        //	 Editor_Person_id
+        // All four of the functions in the objects should be modeled correctly by the
+        // contents of the has_many and belongs_to array. so:
+        // $has_many['Book']['Author'] = 'Person';
+        // $has_many['Book']['Editor'] = 'Person';
+        // $belongs_to['Person']['Author'] = 'Book';
+        // $belongs_to['Person']['Editor'] = 'Book';
 
-			$col_name = $row['COLUMN_NAME'];
-			$all_cols[] = $col_name;
-			$all_row_results[$col_name] = $row; 
-			$col_label = un_camelcase_string($col_name);
+        while ($row = mysql_fetch_array($result)) {
+            //first pass for modeling...
+        //second pass for creating actual code...
+            $foreign_key = false;
 
-			if(strpos($col_name,'_id') != 0){
-	//			echo "\twe have an id tag!!\t";
-				//then this is an id... 
-				//the col_label already has the id trimmed...
-				//lets pretend case is unimportant for now...
+            //var_export($row);
 
-				$col_array = explode('_',$col_name);
-				$throw_away_the_id = array_pop($col_array); // we don't need _id...
-				$other_table_tag = array_pop($col_array);
-				$relationship = implode('_',$col_array);
-				if(strlen($relationship) == 0){
-					$relationship = $other_table_tag;
-				}else{
+            $col_name = $row['COLUMN_NAME'];
+            $all_cols[] = $col_name;
+            $all_row_results[$col_name] = $row;
+            $col_label = un_camelcase_string($col_name);
 
-				}
+            if (strpos($col_name, '_id') != 0) {
+                //			echo "\twe have an id tag!!\t";
+                //then this is an id...
+                //the col_label already has the id trimmed...
+                //lets pretend case is unimportant for now...
 
-	//			echo "searching for $other_table_tag in object2table to model $relationship\t";
-	
-				if(isset($object2table[strtolower($other_table_tag)])){
-					echo "found $other_table_tag\t";
-					//this just doesnt look like a link!! it -is- one.
+                $col_array = explode('_', $col_name);
+                $throw_away_the_id = array_pop($col_array); // we don't need _id...
+                $other_table_tag = array_pop($col_array);
+                $relationship = implode('_', $col_array);
+                if (strlen($relationship) == 0) {
+                    $relationship = $other_table_tag;
+                } else {
+                }
 
+    //			echo "searching for $other_table_tag in object2table to model $relationship\t";
 
-					$has_many_tmp = array( 
-							'prefix' => $relationship,
-							'type' => $object_name
-							);
-					$key = $relationship . '_' . $object_name;
-					$has_many[$other_table_tag][$key] = $has_many_tmp;
+                if (isset($object2table[strtolower($other_table_tag)])) {
+                    echo "found $other_table_tag\t";
+                    //this just doesnt look like a link!! it -is- one.
 
-					$belongs_to_tmp = array( 
-							'prefix' => $relationship,
-							'type' => $other_table_tag
-							);
+                    $has_many_tmp = [
+                            'prefix' => $relationship,
+                            'type'   => $object_name,
+                            ];
+                    $key = $relationship.'_'.$object_name;
+                    $has_many[$other_table_tag][$key] = $has_many_tmp;
 
-					$key = $relationship . '_' . $other_table_tag;
-					$belongs_to[$object_name][$key] = $belongs_to_tmp;	
-   				}
-	//			echo "\n";
-			}
+                    $belongs_to_tmp = [
+                            'prefix' => $relationship,
+                            'type'   => $other_table_tag,
+                            ];
 
-		}//done dealing with columns...
+                    $key = $relationship.'_'.$other_table_tag;
+                    $belongs_to[$object_name][$key] = $belongs_to_tmp;
+                }
+    //			echo "\n";
+            }
+        }//done dealing with columns...
 
-		$table_data[$this_table] = $all_cols;
-		$rows_data[$this_table] = $all_row_results;
-		
-	}//moving to the next table
-	
-	foreach($allCodeGen as $thisCodeGenerator){
-		foreach($table_data as $this_table => $table_cols){
+        $table_data[$this_table] = $all_cols;
+        $rows_data[$this_table] = $all_row_results;
+    }//moving to the next table
 
-		$object_name = $object_names[$this_table];
-		$object_label = un_camelcase_string($object_name);
-		if(isset($has_many[$object_name])){
-			$this_has_many = $has_many[$object_name];
-		}else{
-			$this_has_many = array();	
-		}
-		
-		if(isset($belongs_to[$object_name])){
-			$this_belongs_to = $belongs_to[$object_name];
-		}else{
-			$this_belongs_to = array();
-		}
+    foreach ($allCodeGen as $thisCodeGenerator) {
+        foreach ($table_data as $this_table => $table_cols) {
+            $object_name = $object_names[$this_table];
+            $object_label = un_camelcase_string($object_name);
+            if (isset($has_many[$object_name])) {
+                $this_has_many = $has_many[$object_name];
+            } else {
+                $this_has_many = [];
+            }
 
-		$this_row_data = $rows_data[$this_table];
+            if (isset($belongs_to[$object_name])) {
+                $this_belongs_to = $belongs_to[$object_name];
+            } else {
+                $this_belongs_to = [];
+            }
 
-		$thisCodeGenerator->generate(array(
-					'object_name'	=> $object_name,
-					'table_name' => $this_table,
-					'table_cols' => $table_cols,
-					'table_row_results' => $this_row_data,
-					'has_many' => $this_has_many,
-					'belongs_to' => $this_belongs_to,
-					'database' => $database,
-					'object_label' => $object_label ));
+            $this_row_data = $rows_data[$this_table];
 
+            $thisCodeGenerator->generate([
+                    'object_name'       => $object_name,
+                    'table_name'        => $this_table,
+                    'table_cols'        => $table_cols,
+                    'table_row_results' => $this_row_data,
+                    'has_many'          => $this_has_many,
+                    'belongs_to'        => $this_belongs_to,
+                    'database'          => $database,
+                    'object_label'      => $object_label, ]);
+        }//moving to the next table
+    }//moving to the next code generator
 
-		}//moving to the next table
-	}//moving to the next code generator
+function un_camelcase_string($string)
+{
+    $string = preg_replace('/(?<=\\w)(?=[A-Z])/', ' $1', $string);
+    $string = trim($string);
+    $string = preg_replace('/_id$/', '', $string);
 
-function un_camelcase_string($string){
-        $string = preg_replace('/(?<=\\w)(?=[A-Z])/'," $1", $string);
-        $string = trim($string);
-        $string = preg_replace('/_id$/', '', $string);
-	return($string);
+    return $string;
 }
-	
-?>
