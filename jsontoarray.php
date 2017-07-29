@@ -20,16 +20,12 @@ $json_text = '{ "schema": {
   }
   ';
 
-	echo "\n$json_text\n\n";
+    echo "\n$json_text\n\n";
 
-	$php_array =json_decode($json_text,true);
+    $php_array = json_decode($json_text, true);
 
-	var_export($php_array);
+    var_export($php_array);
 
-	$new_json = json_encode($php_array,JSON_PRETTY_PRINT);
+    $new_json = json_encode($php_array, JSON_PRETTY_PRINT);
 
-	echo "\n\n$new_json\n\n";
-
-
-
-?>
+    echo "\n\n$new_json\n\n";
